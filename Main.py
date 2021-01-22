@@ -39,7 +39,7 @@ from models.Deep_Architectures import CNN_3_Net, CNN_4_Net, CNN_5_Net, AlexNet, 
 
 def arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--epochs", type=int, default=102)
     parser.add_argument("--train-batch-size", type=int, default=100)
     parser.add_argument("--val-batch-size", type=int, default=100)
     parser.add_argument("--pred-batch-size", type=int, default=100)
@@ -179,7 +179,7 @@ def main():
         sum_acc = 0
         # sum_loss = 0
 
-        if epoch % 10 == 0:
+        if epoch % 2 == 0:
             checkpoint = {'state_dict': net.state_dict(), 'optimizer': optimizer.state_dict()}
             save_checkpoint(checkpoint)
 
@@ -220,6 +220,11 @@ def main():
     df = DataFrame({'Test Accuracy': test_acc, 'precision': precision, 'recall': recall, 'f1_score': f1_score,
                     'support': support})
     df.to_excel('test.xlsx', sheet_name='sheet1', index=False)
+    df.to_csv('test.csv', index=False)
+    compression_opts = dict(method='zip', archive_name='out.csv')
+    df.to_csv('out.zip', index=False, compression=compression_opts)
+
+    wandb.save('test.csv', 'my_checkpoint.pth.tar')
 
 
 if __name__ == "__main__":
