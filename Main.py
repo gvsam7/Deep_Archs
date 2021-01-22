@@ -225,6 +225,7 @@ def main():
     df.to_csv('out.zip', index=False, compression=compression_opts)
 
     wandb.save('test.csv')
+    wandb.save('my_checkpoint.pth.tar')
 
 
 if __name__ == "__main__":
