@@ -179,7 +179,7 @@ def main():
         sum_acc = 0
         # sum_loss = 0
 
-        if epoch % 2 == 0:
+        if epoch % 10 == 0:
             checkpoint = {'state_dict': net.state_dict(), 'optimizer': optimizer.state_dict()}
             save_checkpoint(checkpoint)
 
