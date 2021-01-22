@@ -224,7 +224,7 @@ def main():
     compression_opts = dict(method='zip', archive_name='out.csv')
     df.to_csv('out.zip', index=False, compression=compression_opts)
 
-    wandb.save('test.csv', 'my_checkpoint.pth.tar')
+    wandb.save('test.csv')
 
 
 if __name__ == "__main__":
