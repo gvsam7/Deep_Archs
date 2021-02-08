@@ -34,7 +34,7 @@ wandb.init(project="ssrp")
 import os
 import csv
 import models
-from models.Deep_Architectures import CNN_3_Net, CNN_4_Net, CNN_5_Net, AlexNet, VGG16
+from models.Deep_Architectures import CNN_3_Net, CNN_4_Net, CNN_5_Net, CNN_5_Net_2, AlexNet, VGG16
 
 
 def arguments():
@@ -47,7 +47,7 @@ def arguments():
     parser.add_argument("--height", type=int, default=50)
     parser.add_argument("--width", type=int, default=50)
     parser.add_argument("--architecture", type=int, default=1, help="1. 3_CNN, 2. 4_CNN, 3. 5_CNN, 4. AlexNet, "
-                                                                    "5. VGG16")
+                                                                    "5. VGG16, 6. 5_CNN_2")
     parser.add_argument("--load-model", default=False)
     parser.add_argument("--random-state", type=int, default=21)
 
@@ -153,8 +153,10 @@ def main():
         net = CNN_5_Net(input_size).to(device)
     elif args.architecture == 4:
         net = AlexNet(input_size).to(device)
-    else:
+    elif args.architecture == 5:
         net = VGG16(input_size).to(device)
+    else:
+        net = CNN_5_Net_2(input_size).to(device)
 
     print(net)
     optimizer = optim.Adam(net.parameters(), lr=0.001)

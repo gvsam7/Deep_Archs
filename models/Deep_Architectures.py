@@ -97,6 +97,36 @@ class CNN_5_Net(nn.Module):
         return x
 
 
+class CNN_5_Net_2(nn.Module):
+    def __init__(self, input_size):
+        super().__init__()
+
+        self.conv1, input_size = conv(input_size[0], 32, 3, input_size)
+        self.conv2, input_size = conv_2(input_size[0], 64, 3, input_size)
+        self.conv3, input_size = conv_2(input_size[0], 128, 3, input_size)
+        self.conv4, input_size = conv_2(input_size[0], 256, 3, input_size)
+        self.conv5, input_size = conv(input_size[0], 512, 3, input_size)
+
+        input_size_flattened = np.product(input_size)
+        self.fc1 = nn.Linear(input_size_flattened, 1024)
+        self.fc2 = nn.Linear(1024, 10)
+
+    def convs(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        return x
+
+    def forward(self, x):
+        x = self.convs(x)
+        x = x.flatten(start_dim=1)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
 class AlexNet(nn.Module):
     def __init__(self, input_size):
         super().__init__()
