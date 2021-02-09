@@ -32,7 +32,7 @@ class ConvLayer(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def _add_layer(in_channels, out_channels, kernel_size, _input_size, stride=1, padding=0, dilation=1):
+    def _add_layer(in_channels, out_channels, kernel_size, _input_size, stride=2, padding=0, dilation=1):
         """
         :param out_channels:
         :param kernel_size:
