@@ -129,7 +129,7 @@ def main():
         print("Running on the CPU")
 
     transforms = Compose([Resize((args.height, args.width)), ToTensor()])
-    dataset = ImageFolder("Training_Data_2018_2014", transform=transforms)
+    dataset = ImageFolder("VAE_Training_Data_2018_2014", transform=transforms)
     LABELS = dataset.classes
     input_size = dataset[0][0].shape
     X1, y1 = dataset, dataset.targets
