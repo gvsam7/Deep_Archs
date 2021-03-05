@@ -50,6 +50,8 @@ def arguments():
                                                                     "5. VGG16, 6. 5_CNN_2")
     parser.add_argument("--load-model", default=False)
     parser.add_argument("--random-state", type=int, default=21)
+    parser.add_argument("--dataset", type=int, default=2, help="1. Training_Data_2018_2014, "
+                                                               "2. VAE_Training_Data_2018_2014")
 
     return parser.parse_args()
 
@@ -129,7 +131,13 @@ def main():
         print("Running on the CPU")
 
     transforms = Compose([Resize((args.height, args.width)), ToTensor()])
-    dataset = ImageFolder("VAE_Training_Data_2018_2014", transform=transforms)
+    if args.dataset == 1:
+        dataset = ImageFolder("Training_Data_2018_2014", transform=transforms)
+        print("Dataset: Training_Data_2018_2014")
+    else:
+        dataset = ImageFolder("VAE_Training_Data_2018_2014", transform=transforms)
+        print("Dataset: VAE_Training_Data_2018_2014")
+
     LABELS = dataset.classes
     input_size = dataset[0][0].shape
     X1, y1 = dataset, dataset.targets
