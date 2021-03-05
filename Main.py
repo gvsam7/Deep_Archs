@@ -50,7 +50,7 @@ def arguments():
                                                                     "5. VGG16, 6. 5_CNN_2")
     parser.add_argument("--load-model", default=False)
     parser.add_argument("--random-state", type=int, default=21)
-    parser.add_argument("--dataset", type=int, default=2, help="1. Training_Data_2018_2014, "
+    parser.add_argument("--dataset", type=int, default=1, help="1. Training_Data_2018_2014, "
                                                                "2. VAE_Training_Data_2018_2014")
 
     return parser.parse_args()
