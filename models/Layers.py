@@ -59,7 +59,7 @@ class ConvLayer(nn.Module):
 
         return conv_block, (out_channels, out_h, out_w)
 
-    def _add_layer2(in_channels, out_channels, kernel_size, _input_size, stride=1                                                   , padding=0, dilation=1):
+    def _add_layer2(in_channels, out_channels, kernel_size, _input_size, stride=1, padding=0, dilation=1):
         """
         :param out_channels:
         :param kernel_size:
