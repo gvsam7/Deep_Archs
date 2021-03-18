@@ -32,7 +32,6 @@ import shutil
 import wandb
 wandb.init(project="ssrp")
 from models.Deep_Architectures import CNN_3_Net, CNN_4_Net, CNN_5_Net, CNN_5_Net_2, AlexNet, VGG16
-from plots.Predictions import Predictions
 from DataPath.ImagesAndFilepaths import ImagesAndFilepaths
 import pandas as pd
 from torch.utils.data import Subset
