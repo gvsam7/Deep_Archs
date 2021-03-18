@@ -31,10 +31,11 @@ from pandas import DataFrame
 import shutil
 import wandb
 wandb.init(project="ssrp")
-import os
-import csv
-import models
 from models.Deep_Architectures import CNN_3_Net, CNN_4_Net, CNN_5_Net, CNN_5_Net_2, AlexNet, VGG16
+from plots.Predictions import Predictions
+from DataPath.ImagesAndFilepaths import ImagesAndFilepaths
+import pandas as pd
+from torch.utils.data import Subset
 
 
 def arguments():
@@ -61,7 +62,6 @@ def step(x, y, net, optimizer, loss_function, train):
     with torch.set_grad_enabled(train):
         outputs = net(x)
         acc = outputs.argmax(dim=1).eq(y).sum().item()
-        # print(f"Outputs: {outputs}, y: {y}")
         loss = loss_function(outputs, y)
 
     if train:
@@ -75,7 +75,7 @@ def step(x, y, net, optimizer, loss_function, train):
 @torch.no_grad()
 def get_all_preds(model, loader, device):
     all_preds = []
-    for x, _ in loader:
+    for x, _, _ in loader:
         x = x.to(device)
         preds = model(x)
         all_preds.append(preds)
@@ -140,15 +140,24 @@ def main():
 
     LABELS = dataset.classes
     input_size = dataset[0][0].shape
-    X1, y1 = dataset, dataset.targets
-    X_trainval, X_test, y_trainval, y_test = train_test_split(X1, y1, test_size=0.2, stratify=y1,
-                                                              random_state=args.random_state, shuffle=True)
-    test = X_test
-    X2 = X_trainval
-    y2 = y_trainval
-    X_train, X_val, y_train, y_val = train_test_split(X2, y2, test_size=0.2, stratify=y2,
-                                                      random_state=args.random_state, shuffle=True)
-    train, val = X_train, X_val
+    y1 = dataset.targets
+    dataset_len = len(dataset)
+
+    trainval_idx, test_idx, y_trainval_idx, y_test_idx = train_test_split(np.arange(dataset_len), y1, test_size=0.2,
+                                                                          stratify=y1, random_state=args.random_state,
+                                                                          shuffle=True)
+    X2 = trainval_idx
+    y2 = y_trainval_idx
+    train_idx, val_idx, y_train_idx, y_val_idx = train_test_split(X2, y2, test_size=0.2, stratify=y2,
+                                                                  random_state=args.random_state, shuffle=True)
+
+    train_without_filepaths = Subset(dataset, train_idx)
+    val_without_filepaths = Subset(dataset, val_idx)
+    test_without_filepaths = Subset(dataset, test_idx)
+    filepaths = np.array(tuple(zip(*dataset.imgs))[0])
+    train = ImagesAndFilepaths(train_without_filepaths, filepaths[train_idx])
+    val = ImagesAndFilepaths(val_without_filepaths, filepaths[val_idx])
+    test = ImagesAndFilepaths(test_without_filepaths, filepaths[test_idx])
     train_loader = DataLoader(train, batch_size=args.train_batch_size, shuffle=True)
     val_loader = DataLoader(val, batch_size=args.val_batch_size, shuffle=False)
     prediction_loader = DataLoader(test, batch_size=args.pred_batch_size)
@@ -177,33 +186,28 @@ def main():
     for epoch in range(args.epochs):
         net.train()
         sum_acc = 0
-        for x, y in train_loader:
+        for x, y, filepath in train_loader:
             x = x.to(device)
             y = y.to(device)
             acc, loss = step(x, y, net=net, optimizer=optimizer, loss_function=loss_function, train=True)
             sum_acc += acc
         train_avg_acc = sum_acc / len(train_loader)
-        # print(f"Epoch: {epoch} \tTraining accuracy: {train_avg_acc:.2f}")
 
         net.eval()
         sum_acc = 0
-        # sum_loss = 0
 
         if epoch % 10 == 0:
             checkpoint = {'state_dict': net.state_dict(), 'optimizer': optimizer.state_dict()}
             save_checkpoint(checkpoint)
 
-        for x, y in val_loader:
+        for x, y, filepath in val_loader:
             x = x.to(device)
             y = y.to(device)
             val_acc, val_loss = step(x, y, net=net, optimizer=optimizer, loss_function=loss_function, train=True)
             sum_acc += val_acc
-            # sum_loss += val_loss
         val_avg_acc = sum_acc / len(val_loader)
-        # val_avg_loss = sum_loss / len(val_loader)
 
         print(f"Epoch: {epoch} \tTraining accuracy: {train_avg_acc:.2f} \n\t\tValidation accuracy: {val_avg_acc:.2f}")
-        # print(f"Epoch: {epoch} \tValidation loss: {val_avg_loss:.2f}")
 
         train_steps = len(train_loader) * (epoch + 1)
         wandb.log({"Train Accuracy": train_avg_acc, "Validation Accuracy": val_avg_acc}, step=train_steps)
@@ -211,14 +215,24 @@ def main():
     train_preds = get_all_preds(net, loader=prediction_loader, device=device)
     print(f"Train predictions shape: {train_preds.shape}")
     print(f"The label the network predicts strongly: {train_preds.argmax(dim=1)}")
+    predictions = train_preds.argmax(dim=1)
+
+    # Write on a csv file the image ids, target and predicted values
+    signal_dict = {
+        'Filename': filepaths[test_idx],
+        'True Value': y_test_idx,
+        'Prediction': predictions.tolist(),
+    }
+    df = pd.DataFrame(signal_dict)
+    df.to_csv('Predictions.csv', index=False)
 
     plt.figure(figsize=(10, 10))
     # Confusion Matrix
-    wandb.sklearn.plot_confusion_matrix(y_test, train_preds.argmax(dim=1), LABELS)
+    wandb.sklearn.plot_confusion_matrix(y_test_idx, train_preds.argmax(dim=1), LABELS)
     # Class proportions
-    wandb.sklearn.plot_class_proportions(y_train, y_test, LABELS)
-    precision, recall, f1_score, support = score(y_test, train_preds.argmax(dim=1))
-    test_acc = accuracy_score(y_test, train_preds.argmax(dim=1))
+    wandb.sklearn.plot_class_proportions(y_train_idx, y_test_idx, LABELS)
+    precision, recall, f1_score, support = score(y_test_idx, train_preds.argmax(dim=1))
+    test_acc = accuracy_score(y_test_idx, train_preds.argmax(dim=1))
 
     print(f"Test Accuracy: {test_acc}")
     print(f"precision: {precision}")
@@ -236,6 +250,7 @@ def main():
 
     wandb.save('test.csv')
     wandb.save('my_checkpoint.pth.tar')
+    wandb.save('Predictions.csv')
 
 
 if __name__ == "__main__":
